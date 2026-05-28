@@ -1,11 +1,11 @@
 services:
   # ═══════════ MySQL 数据库 ═══════════
   mysql:
-    image: mysql:8.0
+    image: mysql:9.6.0
     container_name: aic-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       MYSQL_DATABASE: ChatRoom
     ports:
       - "3306:3306"
@@ -18,30 +18,31 @@ services:
       timeout: 5s
       retries: 5
 
-  # ═══════════ Redis 缓存 ═══════════
+  # ═══════════ Redis Stack ═══════════
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     container_name: aic-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    environment:
+      REDIS_ARGS: --requirepass ${REDIS_PASSWORD:-123456}
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-123456}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
   # ═══════════ RabbitMQ 消息队列 ═══════════
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:management
     container_name: aic-rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbit123}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-123456}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -55,31 +56,30 @@ services:
 
   # ═══════════ Elasticsearch 搜索引擎 ═══════════
   elasticsearch:
-    image: elasticsearch:8.17.0
+    image: elasticsearch:8.15.5
     container_name: aic-elasticsearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=${ES_PASSWORD:-elastic123}
-      - xpack.security.enrollment.enabled=false
-      - xpack.security.http.ssl.enabled=false
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -u elastic:${ES_PASSWORD:-elastic123} http://localhost:9200/_cluster/health | grep -q 'green\|yellow'"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE 'green|yellow'"]
       interval: 15s
       timeout: 10s
       retries: 10
 
   # ═══════════ Milvus 向量数据库 ═══════════
   milvus:
-    image: milvusdb/milvus:v2.5.4
+    image: milvusdb/milvus:v3.0-beta
     container_name: aic-milvus
     restart: unless-stopped
     environment:
+      DEPLOY_MODE: STANDALONE
       ETCD_USE_EMBED: "true"
       ETCD_DATA_DIR: /var/lib/milvus/etcd
       COMMON_STORAGETYPE: local
@@ -114,13 +114,12 @@ services:
         condition: service_healthy
     environment:
       # 数据库
-      MySQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MySQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       # Redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-123456}
       # RabbitMQ
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-rabbit123}
-      # Elasticsearch
-      ES_PASSWORD: ${ES_PASSWORD:-elastic123}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-123456}
+      # Elasticsearch (security disabled, no password needed)
       # DashScope API
       API_KEY: ${API_KEY}
       # JWT
@@ -130,7 +129,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       # Tavily
       TAVILY_API_KEY: ${TAVILY_API_KEY}
-      # Spring datasource (override localhost with container name)
+      # override localhost → container name
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ChatRoom?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       SPRING_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq

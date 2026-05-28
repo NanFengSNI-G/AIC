@@ -98,8 +98,6 @@ spring:
   # ========== Elasticsearch 配置 ==========
   elasticsearch:
     uris: http://localhost:9200
-    username: elastic
-    password: ${ES_PASSWORD}
 
 # ========== MyBatis-Plus 配置 ==========
 mybatis-plus:
