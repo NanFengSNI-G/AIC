@@ -274,15 +274,6 @@ A: 等待所有容器健康检查通过（`docker compose ps` 确认），首次
 **Q: 博客助手报错 "连接失败"？**
 A: 检查 `API_KEY` 是否正确设置，DashScope 账户是否有余额。
 
-**Q: 图片上传失败？**
-A: 检查 `uploads/` 目录是否有写入权限，Docker 部署时该目录由 volume 管理。
-
-**Q: Elasticsearch 启动失败？**
-A: Linux 主机可能需要调高 `vm.max_map_count`：
-```bash
-sudo sysctl -w vm.max_map_count=262144
-```
-
 ---
 
 ## License
