@@ -74,6 +74,26 @@ services:
       timeout: 10s
       retries: 10
 
+  # ═══════════ Milvus 向量数据库 ═══════════
+  milvus:
+    image: milvusdb/milvus:v2.5.4
+    container_name: aic-milvus
+    restart: unless-stopped
+    environment:
+      ETCD_USE_EMBED: "true"
+      ETCD_DATA_DIR: /var/lib/milvus/etcd
+      COMMON_STORAGETYPE: local
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus-data:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   # ═══════════ 后端 (Spring Boot) ═══════════
   backend:
     build:
@@ -89,6 +109,8 @@ services:
       rabbitmq:
         condition: service_healthy
       elasticsearch:
+        condition: service_healthy
+      milvus:
         condition: service_healthy
     environment:
       # 数据库
@@ -113,6 +135,7 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      LANGCHAIN4J_COMMUNITY_MILVUS_HOST: milvus
     ports:
       - "8080:8080"
 
@@ -133,3 +156,4 @@ volumes:
   redis-data:
   rabbitmq-data:
   es-data:
+  milvus-data:
