@@ -8,9 +8,9 @@
 
 </div>
 
-# AIC — AI 驱动的开发者社区
+# 智汇社——智能模拟面试与知识交流社区
 
-一个集**社区论坛**、**AI 模拟面试**、**AI 博客助手**于一体的全栈 Web 应用。前端 Vue 3 + Tailwind CSS，后端 Spring Boot 3 + LangGraph4j 多 Agent 协作，Docker 一键部署。
+一个集**实时聊天**、 **社区论坛**、**AI 面试**、**AI 博客助手**于一体的全栈 Web 应用。前端 Vue 3 + Tailwind CSS，后端 Spring Boot 3 + LangGraph4j 多 Agent 协作，Docker 一键部署。
 
 ---
 
