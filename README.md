@@ -183,22 +183,18 @@ cd AIC
 cp .env.example .env
 ```
 
-编辑 `.env`，必填项：
+编辑 `.env`，以下变量**全部需要配置**：
 
 | 变量 | 说明 |
 |------|------|
 | `API_KEY` | 阿里云 DashScope API Key（[获取地址](https://dashscope.console.aliyun.com/apiKey)） |
 | `JWT_SECRET` | JWT 签名密钥，建议用 `openssl rand -hex 32` 生成 |
-
-以下可选（不填则使用默认值，功能不受影响）：
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | - | 邮箱验证码服务（注册/找回密码） |
-| `TAVILY_API_KEY` | - | 博客助手的网页搜索能力 |
-| `MYSQL_ROOT_PASSWORD` | `123456` | MySQL root 密码 |
-| `REDIS_PASSWORD` | `123456` | Redis 密码 |
-| `RABBITMQ_PASSWORD` | `123456` | RabbitMQ 密码 |
+| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 |
+| `REDIS_PASSWORD` | Redis 密码 |
+| `RABBITMQ_PASSWORD` | RabbitMQ 密码 |
+| `SMTP_USERNAME` | 发件邮箱地址（用于注册/找回密码的验证码） |
+| `SMTP_PASSWORD` | 邮箱 SMTP 授权码 |
+| `TAVILY_API_KEY` | Tavily 网页搜索 API Key（[获取地址](https://tavily.com/)） |
 
 > **国内用户**：如果 Docker Hub 拉取镜像超时，需在 Docker Desktop → Settings → Docker Engine 中配置镜像加速器，添加 `"registry-mirrors": ["https://docker.1ms.run"]`。
 
