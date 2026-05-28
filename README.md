@@ -147,7 +147,7 @@
    ▼         ▼          ▼          ▼
 ┌──────┐ ┌──────┐ ┌────────┐ ┌─────────────┐
 │MySQL │ │Redis │ │RabbitMQ│ │Elasticsearch │
-│ 8.0  │ │  7   │ │   3    │ │     8        │
+│ 9.6  │ │Stack │ │   4    │ │   8.15        │
 └──────┘ └──────┘ └────────┘ └─────────────┘
 ```
 
@@ -196,10 +196,11 @@ cp .env.example .env
 |------|--------|------|
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | - | 邮箱验证码服务（注册/找回密码） |
 | `TAVILY_API_KEY` | - | 博客助手的网页搜索能力 |
-| `MYSQL_ROOT_PASSWORD` | `root123` | MySQL root 密码 |
-| `REDIS_PASSWORD` | `redis123` | Redis 密码 |
-| `RABBITMQ_PASSWORD` | `rabbit123` | RabbitMQ 密码 |
-| `ES_PASSWORD` | `elastic123` | Elasticsearch 密码 |
+| `MYSQL_ROOT_PASSWORD` | `123456` | MySQL root 密码 |
+| `REDIS_PASSWORD` | `123456` | Redis 密码 |
+| `RABBITMQ_PASSWORD` | `123456` | RabbitMQ 密码 |
+
+> **国内用户**：如果 Docker Hub 拉取镜像超时，需在 Docker Desktop → Settings → Docker Engine 中配置镜像加速器，添加 `"registry-mirrors": ["https://docker.1ms.run"]`。
 
 ### 3. 一键启动
 
@@ -207,7 +208,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-首次启动会拉取镜像并构建前后端，约 3-8 分钟（取决于网络）。
+首次启动会拉取基础镜像并构建前后端，约 3-8 分钟（取决于网络）。如果构建失败，可先执行 `docker compose build` 分步排查。
 
 ### 4. 检查状态
 
@@ -241,13 +242,14 @@ docker compose down -v
 
 ```bash
 # 1. 启动依赖服务
-docker compose up -d mysql redis rabbitmq elasticsearch
+docker compose up -d mysql redis rabbitmq elasticsearch milvus
 
 # 2. 设置环境变量
 export API_KEY=sk-your-key
-export MySQL_PASSWORD=root123
-export REDIS_PASSWORD=redis123
-# ... 其余变量见 .env.example
+export MySQL_PASSWORD=123456
+export REDIS_PASSWORD=123456
+export RABBITMQ_PASSWORD=123456
+# 其余变量见 .env.example
 
 # 3. 启动后端
 cd backend
@@ -273,6 +275,12 @@ A: 等待所有容器健康检查通过（`docker compose ps` 确认），首次
 
 **Q: 博客助手报错 "连接失败"？**
 A: 检查 `API_KEY` 是否正确设置，DashScope 账户是否有余额。
+
+**Q: `docker compose up` 时卡在拉取镜像 / 报 DeadlineExceeded？**
+A: Docker Hub 在国内访问受限，需配置镜像加速器（见上方部署步骤 2 的提示）。
+
+**Q: Milvus 容器启动失败？**
+A: 检查 `configs/milvus/` 下的配置文件是否存在，Milvus v3.0-beta 需要 `embedEtcd.yaml` 和 `user.yaml`。
 
 ---
 
