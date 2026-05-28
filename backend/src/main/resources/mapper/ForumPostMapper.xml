@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.ForumPostMapper">
+
+    <!-- 基础结果映射（不含关联字段） -->
+    <resultMap id="BaseResultMap" type="com.project.demo.entity.ForumPost">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="images" column="images"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="commentCount" column="comment_count"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="isSticky" column="is_sticky"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 含发布者信息和板块名称的映射（用于列表和详情查询） -->
+    <resultMap id="WithDetailMap" type="com.project.demo.entity.ForumPost">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="sectionId" column="section_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="images" column="images"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="commentCount" column="comment_count"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="isSticky" column="is_sticky"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 非数据库字段：通过 JOIN 查询得到 -->
+        <result property="authorUsername" column="author_username"/>
+        <result property="authorAvatar" column="author_avatar"/>
+        <result property="sectionName" column="section_name"/>
+    </resultMap>
+
+    <!-- ============================================================ -->
+    <!-- 分页查询帖子列表（关联用户详情和板块）                          -->
+    <!-- ============================================================ -->
+    <select id="selectPostList" resultMap="WithDetailMap">
+        SELECT
+            p.id, p.user_id, p.section_id, p.title, p.content, p.images,
+            p.like_count, p.comment_count, p.view_count, p.is_sticky, p.status,
+            p.create_time, p.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            s.name AS section_name
+        FROM forum_post p
+        INNER JOIN sys_user u ON p.user_id = u.id
+        INNER JOIN sys_user_detail d ON p.user_id = d.user_id
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE p.status = 1 AND s.status = 1
+        <if test="sectionId != null">
+            AND p.section_id = #{sectionId}
+        </if>
+        ORDER BY
+            <choose>
+                <when test="sortBy == 'hot'">
+                    p.is_sticky DESC, p.like_count DESC, p.comment_count DESC, p.create_time DESC
+                </when>
+                <otherwise>
+                    p.is_sticky DESC, p.create_time DESC
+                </otherwise>
+            </choose>
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计帖子数量                                                   -->
+    <!-- ============================================================ -->
+    <select id="countPostList" resultType="long">
+        SELECT COUNT(*)
+        FROM forum_post p
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE p.status = 1 AND s.status = 1
+        <if test="sectionId != null">
+            AND p.section_id = #{sectionId}
+        </if>
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 根据ID查询（含详情）                                           -->
+    <!-- ============================================================ -->
+    <select id="selectById" resultMap="WithDetailMap">
+        SELECT
+            p.id, p.user_id, p.section_id, p.title, p.content, p.images,
+            p.like_count, p.comment_count, p.view_count, p.is_sticky, p.status,
+            p.create_time, p.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            s.name AS section_name
+        FROM forum_post p
+        INNER JOIN sys_user u ON p.user_id = u.id
+        INNER JOIN sys_user_detail d ON p.user_id = d.user_id
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE p.id = #{id}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 插入帖子                                                       -->
+    <!-- ============================================================ -->
+    <insert id="insert" parameterType="com.project.demo.entity.ForumPost" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO forum_post (user_id, section_id, title, content, images, like_count, comment_count, view_count, is_sticky, status)
+        VALUES (#{userId}, #{sectionId}, #{title}, #{content}, #{images}, #{likeCount}, #{commentCount}, #{viewCount}, #{isSticky}, #{status})
+    </insert>
+
+    <!-- ============================================================ -->
+    <!-- 更新帖子                                                       -->
+    <!-- ============================================================ -->
+    <update id="update" parameterType="com.project.demo.entity.ForumPost">
+        UPDATE forum_post
+        SET title = #{title},
+            content = #{content},
+            images = #{images},
+            status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 增加/减少点赞数                                                -->
+    <!-- ============================================================ -->
+    <update id="incLikeCount">
+        UPDATE forum_post
+        SET like_count = like_count + #{delta}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 增加/减少评论数                                                -->
+    <!-- ============================================================ -->
+    <update id="incCommentCount">
+        UPDATE forum_post
+        SET comment_count = comment_count + #{delta}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 批量增加浏览数（定时同步Redis增量）                            -->
+    <!-- ============================================================ -->
+    <update id="incViewCount">
+        UPDATE forum_post
+        SET view_count = view_count + #{delta}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 查询用户帖子列表                                               -->
+    <!-- ============================================================ -->
+    <select id="selectByUserId" resultMap="WithDetailMap">
+        SELECT
+            p.id, p.user_id, p.section_id, p.title, p.content, p.images,
+            p.like_count, p.comment_count, p.view_count, p.is_sticky, p.status,
+            p.create_time, p.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            s.name AS section_name
+        FROM forum_post p
+        INNER JOIN sys_user u ON p.user_id = u.id
+        INNER JOIN sys_user_detail d ON p.user_id = d.user_id
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE p.user_id = #{userId} AND p.status = 1
+        ORDER BY p.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计用户帖子数                                                 -->
+    <!-- ============================================================ -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM forum_post
+        WHERE user_id = #{userId} AND status = 1
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 全量查询正常帖子（用于ES全量导入）                               -->
+    <!-- ============================================================ -->
+    <select id="selectAllNormal" resultMap="WithDetailMap">
+        SELECT
+            p.id, p.user_id, p.section_id, p.title, p.content, p.images,
+            p.like_count, p.comment_count, p.view_count, p.is_sticky, p.status,
+            p.create_time, p.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            s.name AS section_name
+        FROM forum_post p
+        INNER JOIN sys_user u ON p.user_id = u.id
+        INNER JOIN sys_user_detail d ON p.user_id = d.user_id
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE p.status = 1
+    </select>
+
+</mapper>

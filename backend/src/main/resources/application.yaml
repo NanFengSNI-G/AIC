@@ -1,0 +1,170 @@
+# ========== 服务配置 ==========
+server:
+  port: 8080
+
+langchain4j:
+  open-ai:
+    # 聊天模型
+    chat-model:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api-key: ${API_KEY}
+      model-name: qwen3.6-flash
+      timeout: 180s
+      log-requests: true
+      log-responses: true
+    # 流式聊天模型
+    streaming-chat-model:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api-key: ${API_KEY}
+      model-name: qwen3.6-flash
+      log-requests: true
+      log-responses: true
+    # 向量编码模型
+    embedding-model:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api-key: ${API_KEY}
+      model-name: text-embedding-v3
+      log-requests: true
+      log-responses: true
+      max-segments-per-batch: 10
+  # Milvus向量数据库
+  community:
+    milvus:
+      host: localhost
+      port: 19530
+      collection-name: knowledge_base
+
+spring:
+  application:
+    name: Demo
+  # ========== 文件上传配置 ==========
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+  # ========== Jackson 配置 ==========
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  # ========== MySQL 数据库配置 ==========
+  datasource:
+    url: jdbc:mysql://localhost:3306/ChatRoom?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MySQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # ========== RabbitMQ 配置 ==========
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: ${RABBITMQ_PASSWORD}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+    # 信任所有 DTO 类的反序列化（避免 SecurityException）
+    deserialization:
+      trust:
+        all: true
+  # ========== Redis 配置 ==========
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+      database: 1
+      timeout: 3000ms
+      # 连接池配置
+      lettuce:
+        pool:
+          max-active: 8     #  最大连接数
+          max-idle: 8       #  最大空闲连接数
+          min-idle: 0       #  最小空闲连接数
+          max-wait: -1ms    #  获取连接最大等待时间
+
+
+  # ========== SMTP 邮件配置 ==========
+  mail:
+    # 邮件服务提供商配置
+    # QQ邮箱: smtp.qq.com, 端口 587 (STARTTLS) 或 465 (SSL)
+    # 163邮箱: smtp.163.com, 端口 587
+    # Gmail: smtp.gmail.com, 端口 587
+    host: smtp.163.com
+    username: ${SMTP_USERNAME}                   # 发件人邮箱
+    password: ${SMTP_PASSWORD}                   # SMTP授权码(不是登录密码)
+
+  # ========== Elasticsearch 配置 ==========
+  elasticsearch:
+    uris: http://localhost:9200
+    username: elastic
+    password: ${ES_PASSWORD}
+
+# ========== MyBatis-Plus 配置 ==========
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml                  # 扫描的Mapper XML文件
+  type-aliases-package: com.project.demo.entity              # 实体类包路径
+  configuration:
+    map-underscore-to-camel-case: true                      # 开启驼峰命名转换: user_name -> userName
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # SQL日志输出
+
+# ========== JWT 配置 ==========
+jwt:
+  secret: ${JWT_SECRET}           # 盐值: 用于签名, 生产环境要从环境变量读取
+  expiration: 43200000          # Access Token 过期时间 (毫秒) = 12小时
+  refresh-expiration: 2592000000   # Refresh Token 绝对过期时间 (毫秒) = 30天
+  token-prefix: "Bearer "         # Token 前缀
+  header-name: Authorization      # Header 名称
+
+# ========== 验证码配置 ==========
+verify:
+  # 验证码长度
+  code-length: 6
+  # 验证码过期时间 (秒) = 5分钟
+  expiration: 300
+  # 发送间隔 (秒) = 60秒
+  send-interval: 60
+  # 每天最大发送次数
+  daily-max-send: 10
+
+# ========== 邮件发件人配置 ==========
+email:
+  from: ${SMTP_USERNAME}
+  from-name: Demo系统
+
+# ========== 聊天配置 ==========
+chat:
+  cache-expire-days: 7           # Redis 消息缓存过期时间（天）
+  offline-expire-days: 7         # 离线消息过期时间（天）
+  heartbeat-timeout: 60          # 心跳超时时间（秒），超过则认为用户离线
+  cache-max-size: 1000           # 每个会话最多缓存多少条消息
+  offline-max-size: 1000         # 每个用户最多缓存多少条离线消息
+  default-page-size: 20          # 默认分页大小
+  rate-limit-seconds: 60         # 限流时间窗口（秒）
+  rate-limit-max-messages: 10    # 时间窗口内最多发多少条消息
+  max-recall-minutes: 2          # 消息可撤回的最大时间（分钟）
+
+
+
+# ========== 日志配置 ==========
+logging:
+  level:
+#    com.project.demo: DEBUG
+    org.springframework.security: DEBUG
+
+# ========== Tavily 网页搜索 ==========
+tavily:
+  api-key: ${TAVILY_API_KEY}
+
+# ========== 阿里云 ASR / TTS 配置 ==========
+aliyun:
+  asr:
+    api-key: ${API_KEY}
+    model: qwen3-asr-flash-realtime
+    url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+  tts:
+    api-key: ${API_KEY}
+    model: qwen3-tts-flash-realtime
+    url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+    voice: Kai

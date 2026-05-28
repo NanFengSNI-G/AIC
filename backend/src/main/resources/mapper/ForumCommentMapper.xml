@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.ForumCommentMapper">
+
+    <!-- 基础结果映射（不含关联字段） -->
+    <resultMap id="BaseResultMap" type="com.project.demo.entity.ForumComment">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="content" column="content"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 含发布者信息的映射 -->
+    <resultMap id="WithDetailMap" type="com.project.demo.entity.ForumComment">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="content" column="content"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!-- 非数据库字段：通过 JOIN 查询得到 -->
+        <result property="authorUsername" column="author_username"/>
+        <result property="authorAvatar" column="author_avatar"/>
+        <result property="replyUsername" column="reply_username"/>
+        <result property="isLiked" column="is_liked"/>
+    </resultMap>
+
+    <!-- ============================================================ -->
+    <!-- 分页查询一级评论（parent_id 为 NULL）                          -->
+    <!-- ============================================================ -->
+    <select id="selectRootComments" resultMap="WithDetailMap">
+        SELECT
+            c.id, c.post_id, c.user_id, c.parent_id, c.content, c.like_count, c.status, c.create_time, c.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar
+        FROM forum_comment c
+        INNER JOIN sys_user u ON c.user_id = u.id
+        INNER JOIN sys_user_detail d ON c.user_id = d.user_id
+        WHERE c.post_id = #{postId} AND c.parent_id IS NULL AND c.status = 1
+        ORDER BY c.create_time ASC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计一级评论数                                                 -->
+    <!-- ============================================================ -->
+    <select id="countRootComments" resultType="long">
+        SELECT COUNT(*)
+        FROM forum_comment
+        WHERE post_id = #{postId} AND parent_id IS NULL AND status = 1
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 批量查询子评论（根据多个父评论ID）                             -->
+    <!-- ============================================================ -->
+    <select id="selectRepliesByParentIds" resultMap="WithDetailMap">
+        SELECT
+            c.id, c.post_id, c.user_id, c.parent_id, c.content, c.like_count, c.status, c.create_time, c.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            u2.username AS reply_username
+        FROM forum_comment c
+        INNER JOIN sys_user u ON c.user_id = u.id
+        INNER JOIN sys_user_detail d ON c.user_id = d.user_id
+        LEFT JOIN forum_comment c2 ON c.parent_id = c2.id
+        LEFT JOIN sys_user u2 ON c2.user_id = u2.id
+        WHERE c.parent_id IN
+        <foreach collection="parentIds" item="pid" open="(" separator="," close=")">
+            #{pid}
+        </foreach>
+        AND c.status = 1
+        ORDER BY c.create_time ASC
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 根据ID查询（含详情）                                           -->
+    <!-- ============================================================ -->
+    <select id="selectById" resultMap="WithDetailMap">
+        SELECT
+            c.id, c.post_id, c.user_id, c.parent_id, c.content, c.like_count, c.status, c.create_time, c.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar
+        FROM forum_comment c
+        INNER JOIN sys_user u ON c.user_id = u.id
+        INNER JOIN sys_user_detail d ON c.user_id = d.user_id
+        WHERE c.id = #{id}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 插入评论                                                       -->
+    <!-- ============================================================ -->
+    <insert id="insert" parameterType="com.project.demo.entity.ForumComment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO forum_comment (post_id, user_id, parent_id, content, like_count, status)
+        VALUES (#{postId}, #{userId}, #{parentId}, #{content}, #{likeCount}, #{status})
+    </insert>
+
+    <!-- ============================================================ -->
+    <!-- 增加/减少点赞数                                                -->
+    <!-- ============================================================ -->
+    <update id="incLikeCount">
+        UPDATE forum_comment
+        SET like_count = like_count + #{delta}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 更新状态（软删除）                                             -->
+    <!-- ============================================================ -->
+    <update id="updateStatus">
+        UPDATE forum_comment
+        SET status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+</mapper>

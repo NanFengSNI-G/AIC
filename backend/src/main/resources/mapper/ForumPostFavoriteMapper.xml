@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.ForumPostFavoriteMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.project.demo.entity.ForumPostFavorite">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- ============================================================ -->
+    <!-- 查询收藏记录                                                   -->
+    <!-- ============================================================ -->
+    <select id="selectOne" resultMap="BaseResultMap">
+        SELECT id, post_id, user_id, create_time
+        FROM forum_post_favorite
+        WHERE post_id = #{postId} AND user_id = #{userId}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 插入收藏记录                                                   -->
+    <!-- ============================================================ -->
+    <insert id="insert" parameterType="com.project.demo.entity.ForumPostFavorite">
+        INSERT INTO forum_post_favorite (post_id, user_id)
+        VALUES (#{postId}, #{userId})
+    </insert>
+
+    <!-- ============================================================ -->
+    <!-- 删除收藏记录                                                   -->
+    <!-- ============================================================ -->
+    <delete id="delete">
+        DELETE FROM forum_post_favorite
+        WHERE post_id = #{postId} AND user_id = #{userId}
+    </delete>
+
+    <!-- ============================================================ -->
+    <!-- 查询用户收藏的帖子列表                                         -->
+    <!-- ============================================================ -->
+    <select id="selectUserFavorites" resultMap="com.project.demo.mapper.ForumPostMapper.WithDetailMap">
+        SELECT
+            p.id, p.user_id, p.section_id, p.title, p.content, p.images,
+            p.like_count, p.comment_count, p.view_count, p.is_sticky, p.status,
+            p.create_time, p.update_time,
+            u.username AS author_username,
+            d.avatar AS author_avatar,
+            s.name AS section_name
+        FROM forum_post_favorite f
+        INNER JOIN forum_post p ON f.post_id = p.id
+        INNER JOIN sys_user u ON p.user_id = u.id
+        INNER JOIN sys_user_detail d ON p.user_id = d.user_id
+        INNER JOIN forum_section s ON p.section_id = s.id
+        WHERE f.user_id = #{userId} AND p.status = 1
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计用户收藏数                                                 -->
+    <!-- ============================================================ -->
+    <select id="countUserFavorites" resultType="long">
+        SELECT COUNT(*)
+        FROM forum_post_favorite f
+        INNER JOIN forum_post p ON f.post_id = p.id
+        WHERE f.user_id = #{userId} AND p.status = 1
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 从指定帖子ID列表中筛选出用户已收藏的帖子ID                      -->
+    <!-- ============================================================ -->
+    <select id="selectFavoritedPostIds" resultType="long">
+        SELECT post_id
+        FROM forum_post_favorite
+        WHERE user_id = #{userId}
+        AND post_id IN
+        <foreach collection="postIds" item="pid" open="(" separator="," close=")">
+            #{pid}
+        </foreach>
+    </select>
+
+</mapper>

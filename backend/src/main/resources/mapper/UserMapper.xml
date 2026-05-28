@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.UserMapper">
+
+    <!-- 基础结果映射（不含角色） -->
+    <resultMap id="BaseResultMap" type="com.project.demo.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="email" column="email"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 含角色的结果映射：通过 JOIN 一次查询加载角色列表 -->
+    <resultMap id="WithRolesResultMap" type="com.project.demo.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="email" column="email"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <!--
+            使用 <collection> 处理一对多：用户有多个角色
+            resultMap 引用内联结果映射，通过 JOIN 查出的 role_name 列自动映射到 roles 列表
+        -->
+        <collection property="roles" ofType="string">
+            <result property="." column="role_name"/>
+        </collection>
+    </resultMap>
+
+    <!-- 根据用户名查询用户（含角色，JOIN 方式） -->
+    <select id="findByUsername" resultMap="WithRolesResultMap">
+        SELECT
+            u.id, u.username, u.password, u.email,
+            u.status, u.create_time, u.update_time,
+            r.role_name
+        FROM sys_user u
+        LEFT JOIN sys_user_role ur ON u.id = ur.user_id
+        LEFT JOIN sys_role r ON ur.role_id = r.id
+        WHERE u.username = #{username}
+    </select>
+
+    <!-- 根据邮箱查询用户（含角色，JOIN 方式） -->
+    <select id="findByEmail" resultMap="WithRolesResultMap">
+        SELECT
+            u.id, u.username, u.password, u.email,
+            u.status, u.create_time, u.update_time,
+            r.role_name
+        FROM sys_user u
+        LEFT JOIN sys_user_role ur ON u.id = ur.user_id
+        LEFT JOIN sys_role r ON ur.role_id = r.id
+        WHERE u.email = #{email}
+    </select>
+
+    <!-- 根据ID查询用户（含角色，JOIN 方式） -->
+    <select id="findById" resultMap="WithRolesResultMap">
+        SELECT
+            u.id, u.username, u.password, u.email,
+            u.status, u.create_time, u.update_time,
+            r.role_name
+        FROM sys_user u
+        LEFT JOIN sys_user_role ur ON u.id = ur.user_id
+        LEFT JOIN sys_role r ON ur.role_id = r.id
+        WHERE u.id = #{id}
+    </select>
+
+    <!-- 插入用户角色关联 -->
+    <insert id="insertUserRole">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <!-- 更新密码 -->
+    <update id="updatePassword">
+        UPDATE sys_user SET password = #{password} WHERE id = #{userId}
+    </update>
+
+    <!-- 插入用户 -->
+    <insert id="insertUser" parameterType="com.project.demo.entity.User">
+        INSERT INTO sys_user (username, password, email, status)
+        VALUES (#{username}, #{password}, #{email}, #{status})
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+
+</mapper>

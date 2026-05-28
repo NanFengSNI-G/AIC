@@ -1,0 +1,86 @@
+[
+  {
+    "category": "Java",
+    "name": "Java 官方文档",
+    "url": "https://docs.oracle.com/en/java/",
+    "description": "Java 语言及标准库官方文档"
+  },
+  {
+    "category": "Spring",
+    "name": "Spring 官方文档",
+    "url": "https://docs.spring.io/spring-boot/reference/",
+    "description": "Spring Boot 官方参考文档"
+  },
+  {
+    "category": "数据库",
+    "name": "MySQL 官方文档",
+    "url": "https://dev.mysql.com/doc/refman/8.0/en/",
+    "description": "MySQL 8.0 官方参考手册"
+  },
+  {
+    "category": "缓存",
+    "name": "Redis 官方文档",
+    "url": "https://redis.io/docs/latest/",
+    "description": "Redis 官方文档"
+  },
+  {
+    "category": "消息队列",
+    "name": "RabbitMQ 官方文档",
+    "url": "https://www.rabbitmq.com/docs",
+    "description": "RabbitMQ 消息队列官方文档"
+  },
+  {
+    "category": "通用",
+    "name": "Stack Overflow",
+    "url": "https://stackoverflow.com",
+    "description": "全球最大编程问答社区"
+  },
+  {
+    "category": "通用",
+    "name": "Medium",
+    "url": "https://medium.com",
+    "description": "技术博客平台"
+  },
+  {
+    "category": "通用",
+    "name": "Dev.to",
+    "url": "https://dev.to",
+    "description": "开发者社区"
+  },
+  {
+    "category": "通用",
+    "name": "DZone",
+    "url": "https://dzone.com",
+    "description": "软件开发技术文章"
+  },
+  {
+    "category": "通用",
+    "name": "Baeldung",
+    "url": "https://www.baeldung.com",
+    "description": "Java/Spring 系列教程"
+  },
+  {
+    "category": "中文",
+    "name": "CSDN",
+    "url": "https://www.csdn.net",
+    "description": "中国最大的 IT 技术社区"
+  },
+  {
+    "category": "中文",
+    "name": "掘金",
+    "url": "https://juejin.cn",
+    "description": "中文开发者社区"
+  },
+  {
+    "category": "中文",
+    "name": "博客园",
+    "url": "https://www.cnblogs.com",
+    "description": "中文技术博客园"
+  },
+  {
+    "category": "中文",
+    "name": "SegmentFault",
+    "url": "https://segmentfault.com",
+    "description": "中文技术问答社区"
+  }
+]

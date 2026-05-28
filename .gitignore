@@ -1,0 +1,32 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/target/
+backend/uploads/
+uploads/
+*.class
+*.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# Lucene index
+*.lock
+*.cfe
+*.cfs
+*.si
+segments_*
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Env & Logs
+.env
+*.log
+HELP.md

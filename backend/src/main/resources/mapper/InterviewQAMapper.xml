@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.InterviewQAMapper">
+
+    <insert id="insertQA" parameterType="com.project.demo.entity.InterviewQA">
+        INSERT INTO interview_qa (record_id, question, answer, evaluation)
+        VALUES (#{recordId}, #{question}, #{answer}, #{evaluation})
+    </insert>
+
+    <select id="selectByRecordId" resultType="com.project.demo.entity.InterviewQA">
+        SELECT * FROM interview_qa WHERE record_id = #{recordId} AND status = 0 ORDER BY create_time ASC
+    </select>
+
+    <update id="softDeleteByRecordId">
+        UPDATE interview_qa SET status = 1 WHERE record_id = #{recordId} AND status = 0
+    </update>
+</mapper>

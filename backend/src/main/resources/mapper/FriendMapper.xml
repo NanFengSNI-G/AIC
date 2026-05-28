@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.project.demo.mapper.FriendMapper">
+
+    <!-- ============================================================ -->
+    <!-- 结果映射（ResultMap）                                        -->
+    <!-- ============================================================ -->
+
+    <!-- 基础映射：只映射 sys_friend 表的字段 -->
+    <resultMap id="BaseResultMap" type="com.project.demo.entity.Friend">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="friendId" column="friend_id"/>
+        <result property="status" column="status"/>
+        <result property="message" column="message"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 关联用户详情的映射（用于列表查询） -->
+    <!-- COALESCE 从两个 LEFT JOIN 中选出对方用户的详情 -->
+    <resultMap id="WithDetailMap" type="com.project.demo.entity.Friend">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="friendId" column="friend_id"/>
+        <result property="status" column="status"/>
+        <result property="message" column="message"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+
+        <association property="friendDetail" javaType="com.project.demo.entity.UserDetail">
+            <id property="id" column="friend_detail_id"/>
+            <result property="userId" column="friend_user_id"/>
+            <result property="username" column="friend_username"/>
+            <result property="avatar" column="friend_avatar"/>
+            <result property="age" column="friend_age"/>
+            <result property="bio" column="friend_bio"/>
+        </association>
+    </resultMap>
+
+    <!-- 关联用户详情的映射（用于收到的好友申请，发送方是 f.user_id，JOIN 简单） -->
+    <resultMap id="RequestDetailMap" type="com.project.demo.entity.Friend">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="friendId" column="friend_id"/>
+        <result property="status" column="status"/>
+        <result property="message" column="message"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+
+        <association property="friendDetail" javaType="com.project.demo.entity.UserDetail">
+            <id property="id" column="d_id"/>
+            <result property="userId" column="d_user_id"/>
+            <result property="username" column="d_username"/>
+            <result property="avatar" column="d_avatar"/>
+            <result property="age" column="d_age"/>
+            <result property="bio" column="d_bio"/>
+        </association>
+    </resultMap>
+
+    <!-- ============================================================ -->
+    <!-- 查询好友列表（支持可选搜索）                                   -->
+    <!-- 使用两个 LEFT JOIN + COALESCE 代替 OR JOIN，每个 JOIN 可走索引 -->
+    <!-- ============================================================ -->
+    <select id="selectFriendsByUserId" resultMap="WithDetailMap">
+        SELECT
+            f.id,
+            f.user_id,
+            f.friend_id,
+            f.status,
+            f.message,
+            f.create_time,
+            f.update_time,
+
+            -- 对方用户详情：当前用户是 user_id 时取 d1（friend 方），否则取 d2（user 方）
+            COALESCE(d1.id, d2.id) AS friend_detail_id,
+            COALESCE(d1.user_id, d2.user_id) AS friend_user_id,
+            COALESCE(d1.username, d2.username) AS friend_username,
+            COALESCE(d1.avatar, d2.avatar) AS friend_avatar,
+            COALESCE(d1.age, d2.age) AS friend_age,
+            COALESCE(d1.bio, d2.bio) AS friend_bio
+
+        FROM sys_friend f
+        LEFT JOIN sys_user_detail d1 ON f.friend_id = d1.user_id
+        LEFT JOIN sys_user_detail d2 ON f.user_id = d2.user_id
+
+        WHERE (f.user_id = #{userId} OR f.friend_id = #{userId})
+          AND f.status = 1
+
+          <if test="search != null and search.trim() != ''">
+            AND (
+                (f.user_id = #{userId} AND d1.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\')
+                OR (f.friend_id = #{userId} AND d2.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\')
+            )
+          </if>
+
+        ORDER BY f.update_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计好友数量（有搜索时 JOIN，无搜索时只查 sys_friend）        -->
+    <!-- ============================================================ -->
+    <select id="countFriendsByUserId" resultType="long">
+        <choose>
+            <when test="search != null and search.trim() != ''">
+                SELECT COUNT(*)
+                FROM sys_friend f
+                LEFT JOIN sys_user_detail d1 ON f.friend_id = d1.user_id
+                LEFT JOIN sys_user_detail d2 ON f.user_id = d2.user_id
+                WHERE (f.user_id = #{userId} OR f.friend_id = #{userId}) AND f.status = 1
+                  AND (
+                      (f.user_id = #{userId} AND d1.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\')
+                      OR (f.friend_id = #{userId} AND d2.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\')
+                  )
+            </when>
+            <otherwise>
+                SELECT COUNT(*)
+                FROM sys_friend
+                WHERE (user_id = #{userId} OR friend_id = #{userId}) AND status = 1
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 查询收到的好友申请列表（只查 pending 状态）                    -->
+    <!-- ============================================================ -->
+    <select id="selectFriendRequestsByUserId" resultMap="RequestDetailMap">
+        SELECT
+            f.id,
+            f.user_id,
+            f.friend_id,
+            f.status,
+            f.message,
+            f.create_time,
+            f.update_time,
+
+            d.id AS d_id,
+            d.user_id AS d_user_id,
+            d.username AS d_username,
+            d.avatar AS d_avatar,
+            d.age AS d_age,
+            d.bio AS d_bio
+
+        FROM sys_friend f
+        INNER JOIN sys_user_detail d ON f.user_id = d.user_id
+
+        WHERE f.friend_id = #{userId}
+          AND f.status = 0
+
+          <if test="search != null and search.trim() != ''">
+            AND d.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\'
+          </if>
+
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 统计收到的申请数量                                            -->
+    <!-- ============================================================ -->
+    <select id="countFriendRequestsByUserId" resultType="long">
+        <choose>
+            <when test="search != null and search.trim() != ''">
+                SELECT COUNT(*)
+                FROM sys_friend f
+                INNER JOIN sys_user_detail d ON f.user_id = d.user_id
+                WHERE f.friend_id = #{userId} AND f.status = 0
+                  AND d.username LIKE CONCAT('%', #{search}, '%') ESCAPE '\\'
+            </when>
+            <otherwise>
+                SELECT COUNT(*)
+                FROM sys_friend
+                WHERE friend_id = #{userId} AND status = 0
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 查询单向记录                                                  -->
+    <!-- ============================================================ -->
+    <select id="selectOneWay" resultMap="BaseResultMap">
+        SELECT *
+        FROM sys_friend
+        WHERE user_id = #{userId} AND friend_id = #{friendId}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 一次查询双向记录（代替两次 selectOneWay）                      -->
+    <!-- ============================================================ -->
+    <select id="selectBothWays" resultMap="BaseResultMap">
+        SELECT *
+        FROM sys_friend
+        WHERE (user_id = #{userId1} AND friend_id = #{userId2})
+           OR (user_id = #{userId2} AND friend_id = #{userId1})
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 根据ID查询好友关系                                            -->
+    <!-- ============================================================ -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT *
+        FROM sys_friend
+        WHERE id = #{id}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 插入好友关系                                                  -->
+    <!-- ============================================================ -->
+    <insert id="insertFriend" parameterType="com.project.demo.entity.Friend">
+        INSERT INTO sys_friend (user_id, friend_id, status, message)
+        VALUES (#{userId}, #{friendId}, #{status}, #{message})
+    </insert>
+
+    <!-- ============================================================ -->
+    <!-- 更新好友关系（通过ID，全量更新 — 仅用于重新发起申请场景）        -->
+    <!-- ============================================================ -->
+    <update id="updateById" parameterType="com.project.demo.entity.Friend">
+        UPDATE sys_friend
+        SET status = #{status},
+            message = #{message},
+            create_time = #{createTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 只更新 status（拒绝 / 删除）                                     -->
+    <!-- ============================================================ -->
+    <update id="updateStatus">
+        UPDATE sys_friend SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <!-- ============================================================ -->
+    <!-- 更新 status + update_time（同意申请）                           -->
+    <!-- ============================================================ -->
+    <update id="updateStatusAndUpdateTime">
+        UPDATE sys_friend SET status = #{status}, update_time = #{updateTime} WHERE id = #{id}
+    </update>
+
+
+</mapper>

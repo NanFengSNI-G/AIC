@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   Design: "Warm Editorial"
+   — layered backgrounds, subtle noise, refined shadows
+   — amber warmth against deep slate
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-primary: #F9F8F5;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F3F1EC;
+  --bg-elevated: #FFFFFF;
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-tertiary: #A8A29E;
+  --accent-primary: #D97706;
+  --accent-hover: #F59E0B;
+  --accent-muted: #FFF7ED;
+  --accent-soft: #FDE68A;
+  --surface-card: #FFFFFF;
+  --surface-hover: #FAFAF9;
+  --border-subtle: #E7E5E4;
+  --border-default: #D6D3D1;
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow-md: 0 4px 16px rgba(28, 25, 23, 0.06);
+  --shadow-lg: 0 8px 32px rgba(28, 25, 23, 0.08);
+  --shadow-card: 0 1px 3px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.04);
+  --shadow-elevated: 0 8px 40px rgba(28, 25, 23, 0.1);
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+}
+
+/* ═══════════════ Noise Texture ═══════════════ */
+@layer base {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    pointer-events: none;
+  }
+}
+
+/* ═══════════════ Base ═══════════════ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--bg-primary);
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(251, 191, 36, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 80%, rgba(217, 119, 6, 0.04) 0%, transparent 55%),
+    linear-gradient(180deg, #F9F8F5 0%, #F5F2ED 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════ Page Transitions ═══════════════ */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ═══════════════ Scrollbar ═══════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D6D3D1;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8A29E;
+}
+
+/* ═══════════════ Selection ═══════════════ */
+::selection {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--text-primary);
+}
+
+/* ═══════════════ Utility: card surface ═══════════════ */
+@layer components {
+  .surface-card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .surface-card:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-md);
+  }
+
+  .surface-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(231, 229, 228, 0.6);
+  }
+
+  /* decorative gradient blobs for page backgrounds */
+  .bg-ambient-light {
+    position: relative;
+  }
+  .bg-ambient-light::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(circle 400px at 20% 10%, rgba(251, 191, 36, 0.08) 0%, transparent 100%),
+      radial-gradient(circle 350px at 80% 90%, rgba(217, 119, 6, 0.05) 0%, transparent 100%);
+  }
+}
