@@ -78,6 +78,7 @@ services:
     image: milvusdb/milvus:v3.0-beta
     container_name: aic-milvus
     restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
     environment:
       DEPLOY_MODE: STANDALONE
       ETCD_USE_EMBED: "true"
@@ -88,6 +89,8 @@ services:
       - "9091:9091"
     volumes:
       - milvus-data:/var/lib/milvus
+      - ./configs/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./configs/milvus/user.yaml:/milvus/configs/user.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 10s

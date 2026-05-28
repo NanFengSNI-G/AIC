@@ -1,7 +1,7 @@
 # ── Build & Run ──
-FROM eclipse-temurin:25-jdk-alpine
+FROM bellsoft/liberica-openjdk-alpine:25
 WORKDIR /app
 COPY . .
 RUN ./mvnw package -DskipTests -B
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "target/*.jar"]
+CMD java -jar target/*.jar
